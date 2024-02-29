@@ -30,13 +30,18 @@ Specifically:
 * reconfigure Dell server/workstation, currently _(ssh'ed into the dell server)_:
   * `start-master.sh` 
     * no args, no config/tuning
+    * **Note:** all three start- commands are run from `$SPARK_HOME/sbin/`
   * `start-worker.sh spark://dell:7077 -c 40 -m 90G`
     * dell is an _/etc/hosts_ entry pointing to ethernet card the eth
     * I **think** this means one big-far worker, where I should probably do 20 workers with a couple of cores and Gbs each...??
+  * `start-history-server.sh` 
+  * improve logging setup, far too verbose with framework msgs
 * learn spark/scala
   * how to get the actual NER entities to display nicely instead of some hackish `.show()` that I currently have
   * read content from postgresql db (same host)
   * save NER results back to both Postgres and to a "sister" solr cluster that is mirroring some content (for better search)
+  * learn the Spark admin UI(s) better
+  * explore the history server
 
 ## Various Details
 ### Hardware
