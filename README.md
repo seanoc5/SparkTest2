@@ -14,6 +14,8 @@ At the moment, my interest is improving my devops and smarter approaches for wor
 Specifically:
 * better practices for how to develop on a 16Gb laptop (sampling, smaller models, etc)
 * better practices for submitting a job from the laptop to the dell server/workstation
+* figure out how to add `sbt aseembly` when needed before the `spark-submit` (in Intellij)
+  
 
 ## Progress / Current status
 * 2024-02-28:
@@ -37,4 +39,14 @@ Specifically:
   * save NER results back to both Postgres and to a "sister" solr cluster that is mirroring some content (for better search)
 
 ## Various Details
-FWIW: Dell T7810 “Chia Farming” Workstation/Server, 2X Intel Xeon E5-2690 v4 up to 3.5GHz (28 Cores & 56 Threads Total), 128GB DDR4, Quadro K620 2GB Graphics Card,
+### Hardware
+* Dell T7810 _“Chia Farming”_ Workstation/Server, 
+  * 2X Intel Xeon E5-2690 v4 up to 3.5GHz (28 Cores & 56 Threads Total), 
+  * 128GB DDR4 _(upgradable to 256 when/if needed)_
+  * old HDDs for OS and work (currently) ~4TB 
+  * 1TB SDD on a PCIe adapter, but not yet recognized or used
+  * Quadro K620 2GB Graphics Card
+* Lenovo Yoga Yoga 9-15IMH5 Laptop (Lenovo) 
+  * 16 Gb
+  * SSD
+

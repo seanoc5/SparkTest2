@@ -11,11 +11,11 @@ object NerDLPipeline extends App {
 
   val spark: SparkSession = SparkSession
     .builder()
-    .appName("test")
+//    .appName("test")
     .master("spark://dell:7077")
-    .config("spark.driver.memory", "4G")
-    .config("spark.kryoserializer.buffer.max", "200M")
-    .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+//    .config("spark.driver.memory", "4G")
+//    .config("spark.kryoserializer.buffer.max", "200M")
+//    .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
     .getOrCreate()
 
   import spark.implicits._
