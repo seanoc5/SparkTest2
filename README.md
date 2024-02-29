@@ -17,10 +17,24 @@ Specifically:
 
 ## Progress / Current status
 * 2024-02-28:
-*   I have worked out various incompatible versioning issues.
-*   I have sbt-assembly added to the sbt setup, and worked out dependency resolution issues
-*   I can create a fat jar and `spark-submit` it with `--master spark://dell:7077` param, but only `client` mode (`cluster` gives me a vague error)
-*   
+  * I have worked out various incompatible versioning issues. 
+  * I have sbt-assembly added to the sbt setup, and worked out dependency resolution issues 
+  * I can create a fat jar via `sbt assebly` 
+  * and then `spark-submit` it with `--master spark://dell:7077` param, 
+    * but only `client` mode (`cluster` gives me a vague error)
+
+## Todo (next phase)
+* get better with sbt: switch from old syntax to slash [syntax](https://www.scala-sbt.org/1.x/docs/Migrating-from-sbt-013x.html#slash) 
+* reconfigure Dell server/workstation, currently _(ssh'ed into the dell server)_:
+  * `start-master.sh` 
+    * no args, no config/tuning
+  * `start-worker.sh spark://dell:7077 -c 40 -m 90G`
+    * dell is an _/etc/hosts_ entry pointing to ethernet card the eth
+    * I **think** this means one big-far worker, where I should probably do 20 workers with a couple of cores and Gbs each...??
+* learn spark/scala
+  * how to get the actual NER entities to display nicely instead of some hackish `.show()` that I currently have
+  * read content from postgresql db (same host)
+  * save NER results back to both Postgres and to a "sister" solr cluster that is mirroring some content (for better search)
 
 ## Various Details
 FWIW: Dell T7810 “Chia Farming” Workstation/Server, 2X Intel Xeon E5-2690 v4 up to 3.5GHz (28 Cores & 56 Threads Total), 128GB DDR4, Quadro K620 2GB Graphics Card,
