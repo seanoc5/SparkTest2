@@ -42,6 +42,8 @@ Specifically:
   * save NER results back to both Postgres and to a "sister" solr cluster that is mirroring some content (for better search)
   * learn the Spark admin UI(s) better
   * explore the history server
+* Intellij 
+  * remote development
 
 ## Various Details
 ### Hardware

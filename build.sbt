@@ -20,6 +20,8 @@ libraryDependencies ++= Seq(
 
   "com.johnsnowlabs.nlp" %% "spark-nlp" % "5.2.3", // Use the latest version
 
+  "org.postgresql" % "postgresql" % "42.7.1"
+
 )
 
 assemblyJarName in assembly := "oconeco-scala-sbt-assembly-fatjar-0.1.0.jar"

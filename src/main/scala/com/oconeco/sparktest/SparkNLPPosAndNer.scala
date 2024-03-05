@@ -1,4 +1,5 @@
-package com.oconeco
+package com.oconeco.sparktest
+// code/deployment status: ???
 
 import com.johnsnowlabs.nlp.base._
 import com.johnsnowlabs.nlp.annotator._
@@ -7,16 +8,21 @@ import org.apache.spark.sql.SparkSession
 
 object SparkNLPPosAndNer {
   def main(args: Array[String]): Unit = {
+    println("Getting started...")
+
     // Create a Spark session
     val spark = SparkSession.builder()
       .appName("SparkNLPPosAndNer")
-      .master("local[1]") // Use local for testing, set your master for production
+      .master("local[*]") // Use local for testing, set your master for production
       .getOrCreate()
 
     import spark.implicits._
     // Sample paragraph of text
     val sampleText = Seq(
-      (1, "John Snow, a leading figure in the development of modern epidemiology, was born in York, England.")
+      (1, "John Snow, a leading figure in the development of modern epidemiology, was born in York, England."),
+      (2, """Cursors are used by default to pull documents out of Solr. By default, the number of tasks allocated will be the number of shards available for the collection.
+            |If your Spark cluster has more available executor slots than the number of shards, then you can increase parallelism when reading from Solr by splitting each shard into sub ranges using a split field. A good candidate for the split field is the version field that is attached to every document by the shard leader during indexing. See splits section to enable and configure intra shard splitting.
+            |Cursors won’t work if the index changes during the query time. Constrain your query to a static index by using additional Solr parameters using solr.params.""".stripMargin)
     ).toDF("id", "text")
 
     // Define the Spark NLP pipeline
@@ -41,7 +47,8 @@ object SparkNLPPosAndNer {
       .setOutputCol("pos")
 
     val nerTagger = NerDLModel.pretrained() // Pretrained NER model
-      .setInputCols("sentence", "token", "pos")
+//      .setInputCols("sentence", "token", "pos")
+      .setInputCols("document", "token", "word_embeddings")
       .setOutputCol("ner")
 
 
@@ -52,6 +59,7 @@ object SparkNLPPosAndNer {
     val pipeline = new Pipeline().setStages(Array(
       documentAssembler,
       sentenceDetector,
+      wordEmbeddings,
       tokenizer,
       posTagger,
       nerTagger,
