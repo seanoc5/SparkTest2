@@ -57,3 +57,22 @@ Specifically:
   * 16 Gb
   * SSD
 
+
+## Notes
+Caution with Large Datasets
+
+For larger datasets that cannot fit into memory, consider using distributed operations like foreachPartition to process each partition of the DataFrame independently without collecting the data to a single machine:
+
+scala
+
+explodedResults.select("normalized_token").foreachPartition { partitionIterator =>
+  partitionIterator.foreach { row =>
+    val token = row.getString(0) // Process each token
+    // Perform your processing logic here
+    println(token)
+  }
+}
+
+This approach leverages Spark's distributed computing capabilities, processing each partition of the DataFrame across the cluster without requiring the data to be collected to a single machine. It's a more scalable way to process the results for large datasets.
+
+Remember, when working with Spark DataFrames, you're operating in a distributed environment, so it's best to use Spark's native transformations and actions to process your data efficiently across the cluster.

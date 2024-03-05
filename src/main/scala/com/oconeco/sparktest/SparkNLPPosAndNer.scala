@@ -1,5 +1,7 @@
 package com.oconeco.sparktest
-// code/deployment status: ???
+// code/deployment status: broken
+//# A fatal error has been detected by the Java Runtime Environment:
+//#  SIGSEGV (0xb) at pc=0x00007f36171b19c8, pid=250691, tid=0x00007f3633dd6640
 
 import com.johnsnowlabs.nlp.base._
 import com.johnsnowlabs.nlp.annotator._
@@ -59,8 +61,8 @@ object SparkNLPPosAndNer {
     val pipeline = new Pipeline().setStages(Array(
       documentAssembler,
       sentenceDetector,
-      wordEmbeddings,
       tokenizer,
+      wordEmbeddings,
       posTagger,
       nerTagger,
       converter
@@ -73,7 +75,7 @@ object SparkNLPPosAndNer {
     val results = model.transform(sampleText)
 
     // Show the results
-//    results.select("id", "pos.result", "ner_chunk.result").show(false)
+    results.select("id", "pos.result", "ner_chunk.result").show(false)
     results.show(false)
 
     spark.stop()

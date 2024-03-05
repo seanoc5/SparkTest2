@@ -1,6 +1,6 @@
 package com.oconeco
 //code/deployment status: Broken
-
+// works with submit, but not local[...]
 //2024-03-03 20:10:30.203607: I external/org_tensorflow/tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
 //To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
 //# A fatal error has been detected by the Java Runtime Environment:
@@ -18,11 +18,11 @@ object NerDLPipeline extends App {
   val spark: SparkSession = SparkSession
     .builder()
     .appName("NER DL Pipeline test")
-//    .master("spark://dell:7077")
+    //    .master("spark://dell:7077")
     .master("local[4]")
-//    .config("spark.driver.memory", "4G")
-//    .config("spark.kryoserializer.buffer.max", "200M")
-//    .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+    //    .config("spark.driver.memory", "4G")
+    //    .config("spark.kryoserializer.buffer.max", "200M")
+    //    .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
     .getOrCreate()
 
   import spark.implicits._

@@ -1,6 +1,6 @@
 package com.oconeco.sparktest
 //https://databricks-prod-cloudfront.cloud.databricks.com/public/4027ec902e239c93eaaa8714f173bcfc/5276288487867556/871609068453572/3684151997220649/latest.html
-//code/deployment status: ???
+//code/deployment status: ???  -- needs heavy resources, training...
 
 import com.johnsnowlabs.nlp.base.DocumentAssembler
 import com.johnsnowlabs.nlp.annotators.Tokenizer
@@ -61,7 +61,6 @@ object DatabricksNerCRFApproachExample {
 
     val pipelineModel = pipeline.fit(trainingData)
 
-//    pipelineModel.
-
+    println("Done")
   }
 }

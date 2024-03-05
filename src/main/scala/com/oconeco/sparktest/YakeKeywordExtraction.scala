@@ -1,4 +1,6 @@
 package com.oconeco.sparktest
+// code/deployment status: WORKING
+
 //import spark.implicits._
 import com.johnsnowlabs.nlp.base.DocumentAssembler
 import com.johnsnowlabs.nlp.annotator.{SentenceDetector, Tokenizer}

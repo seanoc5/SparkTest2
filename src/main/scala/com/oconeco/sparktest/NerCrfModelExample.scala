@@ -1,5 +1,5 @@
 package com.oconeco.sparktest
-// code/deployment status: ???
+// code/deployment status: WORKING
 //https://sparknlp.org/api/com/johnsnowlabs/nlp/annotators/ner/crf/NerCrfModel.html
 
 import com.johnsnowlabs.nlp.base.DocumentAssembler
