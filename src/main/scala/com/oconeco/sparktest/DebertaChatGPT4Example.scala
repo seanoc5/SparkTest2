@@ -37,6 +37,12 @@ object DebertaChatGPT4Example {
       .setInputCols("document")
       .setOutputCol("sentence")
 
+    val embeddings = BertSentenceEmbeddings.pretrained("sent_small_bert_L2_128")
+      .setInputCols("sentence")
+      .setOutputCol("sentence_bert_embeddings")
+      .setCaseSensitive(true)
+      .setMaxSentenceLength(512)
+
     val tokenizer = new Tokenizer()
       .setInputCols("sentence")
       .setOutputCol("token")
@@ -54,7 +60,13 @@ object DebertaChatGPT4Example {
     import spark.implicits._
     // Load some example data to apply NER
     val data = Seq("Jeff visited New York last week.").toDF("text")
-    val pipeline = new Pipeline().setStages(Array(documentAssembler, sentenceDetector, tokenizer, nerModel, nerConverter))
+    val pipeline = new Pipeline().setStages(Array(
+      documentAssembler,
+      sentenceDetector,
+      embeddings,
+      tokenizer,
+      nerModel,
+      nerConverter))
     val result = pipeline.fit(data).transform(data)
 
     // Show results
