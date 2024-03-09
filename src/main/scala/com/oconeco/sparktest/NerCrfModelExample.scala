@@ -2,6 +2,7 @@ package com.oconeco.sparktest
 // code/deployment status: WORKING
 //https://sparknlp.org/api/com/johnsnowlabs/nlp/annotators/ner/crf/NerCrfModel.html
 
+import com.johnsnowlabs.nlp.annotator.NerConverter
 import com.johnsnowlabs.nlp.base.DocumentAssembler
 import com.johnsnowlabs.nlp.annotators.Tokenizer
 import com.johnsnowlabs.nlp.annotators.sbd.pragmatic.SentenceDetector
@@ -51,23 +52,31 @@ object NerCrfModelExample {
       .setInputCols("sentence", "token", "word_embeddings", "pos")
       .setOutputCol("ner")
 
+    val nerConverter = new NerConverter()
+      .setInputCols("document", "token", "ner")
+      .setOutputCol("ner_chunk")
+
+
     val pipeline = new Pipeline().setStages(Array(
       documentAssembler,
       sentence,
       tokenizer,
       embeddings,
       posTagger,
-      nerTagger
+      nerTagger,
+      nerConverter
     ))
 
-    val data = Seq("U.N. official Ekeus heads for Baghdad. Spark is a tool for big companies like Google, Amazon, and MS. Kevin Butler does not like it. Sean is learning"). toDF("text")
+    val data = Seq("John Smith, is a fictional name and was born in Albany, New York. Spark is a tool for big companies like Google, Amazon, and Mr. Kevin Butler does not like it.", "Sean is learning Scala."). toDF("text")
     val result = pipeline.fit(data).transform(data)
 
     println("Result schema:")
     result.printSchema()
 
+    result.selectExpr("explode(ner_chunk)").show(40,80,true)
+
     // Replace "entities" with the actual name of your column containing the NER results
-    val explodedDF = result.withColumn("entity", explode($"ner"))
+    val explodedDF = result.withColumn("nerentity", explode($"ner"))
 
     // Now, you can select the specific fields of interest from the "entity" column
     val entitiesDF = explodedDF.select(
@@ -78,7 +87,7 @@ object NerCrfModelExample {
       $"entity.end".as("end_pos")
     )
 
-    entitiesDF.show(40, false)
+    entitiesDF.show(80, 120)
 
 
 //    result.select("ner.result").show(false)

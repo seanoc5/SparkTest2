@@ -24,13 +24,14 @@ object PostgresExample {
     val jdbcUrl = "jdbc:postgresql://dell/cm_dev?user=corpusminder&password=pass1234"
     val dfContent = spark.read.format("jdbc")
       .option("url", jdbcUrl)
-      .option("query", "select id, title, uri, structured_content from content where structure_size > 1000 and structure_size < 10000 limit 10")
+//      .option("query", "select id, title, uri, structured_content from content where structure_size > 1000 and structure_size < 10000 limit 10")
+      .option("query", "select id, title, uri, body_text from content where structure_size > 100 and structure_size < 100000 limit 10")
       .load()
 
-    dfContent.show(10, 60)
+    dfContent.show(10, 120, true)
 
     val documentAssembler = new DocumentAssembler()
-      .setInputCol("text")
+      .setInputCol("body_text")
       .setOutputCol("document")
 
     val sentenceDetector = new SentenceDetector()
@@ -56,7 +57,7 @@ object PostgresExample {
       keywords
     ))
 
-    val data = Seq(
+/*    val data = Seq(
       """Sources tell us that Google is buying Kaggle, a platform that hosts data science and machine learning competitions.
         |Details about the transaction remain somewhat vague, but given that Google is hosting its Cloud Next conference in San Francisco this week,
         |the official announcement could come as early as tomorrow. Reached by phone, Kaggle co-founder CEO Anthony Goldbloom declined to deny that the acquisition is happening.
@@ -75,12 +76,12 @@ object PostgresExample {
         |According to Crunchbase, Kaggle raised $12.5 million (though PitchBook says it's $12.75) since its   launch in 2010.
         |Investors in Kaggle include Index Ventures, SV Angel, Max Levchin, Naval Ravikant,
         |Google chief economist Hal Varian, Khosla Ventures and Yuri Milner""".stripMargin
-    ).toDF("text")
-    val result = pipeline.fit(data).transform(data)
+    ).toDF("text")*/
+//    val result = pipeline.fit(data).transform(data)
+    val dfTransformed = pipeline.fit(dfContent).transform(dfContent)
 
     // combine the result and score (contained in keywords.metadata)
-    val scores = result
-      .selectExpr("explode(arrays_zip(keywords.result, keywords.metadata)) as resultTuples")
+    val scores = dfTransformed.selectExpr("explode(arrays_zip(keywords.result, keywords.metadata)) as resultTuples")
     //      .select($"resultTuples.0" as "keyword", $"resultTuples.1.score")
 
     scores.show(false)
