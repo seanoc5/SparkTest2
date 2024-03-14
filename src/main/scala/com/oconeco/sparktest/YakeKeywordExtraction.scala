@@ -2,11 +2,13 @@ package com.oconeco.sparktest
 // code/deployment status: WORKING
 
 //import spark.implicits._
+
 import com.johnsnowlabs.nlp.base.DocumentAssembler
 import com.johnsnowlabs.nlp.annotator.{SentenceDetector, Tokenizer}
 import com.johnsnowlabs.nlp.annotators.keyword.yake.YakeKeywordExtraction
 import org.apache.spark.ml.Pipeline
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions.{col, map_keys}
 
 
 object YakeKeywordExtraction {
@@ -47,7 +49,7 @@ object YakeKeywordExtraction {
       keywords
     ))
 
-    val data = Seq(
+    val data = Seq("Sean's first sentence about Google.",
       """Sources tell us that Google is buying Kaggle, a platform that hosts data science and machine learning competitions.
         |Details about the transaction remain somewhat vague, but given that Google is hosting its Cloud Next conference in San Francisco this week,
         |the official announcement could come as early as tomorrow. Reached by phone, Kaggle co-founder CEO Anthony Goldbloom declined to deny that the acquisition is happening.
@@ -59,8 +61,8 @@ object YakeKeywordExtraction {
         |but that's pretty recent. Earlier this month, Google and Kaggle teamed up to host a $100,000 machine learning competition around classifying YouTube videos.
         |That competition had some deep integrations with the Google Cloud Platform, too. Our understanding is that Google will keep the service running -
         |likely under its current name. While the acquisition is probably more about Kaggle's community than technology,
-        |Kaggle did build some interesting tools for hosting its competition and 'kernels', too.
-        |On Kaggle, kernels are basically the source code for analyzing data sets and developers can share this code on the platform
+        |Kaggle did build some interesting tools for hosting its competition and 'kernels', too.""",
+      """On Kaggle, kernels are basically the source code for analyzing data sets and developers can share this code on the platform
         |(the company previously called them 'scripts'). Like similar competition-centric sites,
         |Kaggle also runs a job board, too. It's unclear what Google will do with that part of the service.
         |According to Crunchbase, Kaggle raised $12.5 million (though PitchBook says it's $12.75) since its   launch in 2010.
@@ -68,17 +70,31 @@ object YakeKeywordExtraction {
         |Google chief economist Hal Varian, Khosla Ventures and Yuri Milner""".stripMargin
     ).toDF("text")
     val result = pipeline.fit(data).transform(data)
+    result.printSchema()
+    println(result.count())
+    result.show(5, 120, true)
+
+    val dfResultExploded = result.selectExpr("explode(keywords) as kwexploded")
+    dfResultExploded.printSchema()
+    dfResultExploded.show(5,120,true)
+
+    //    val bar =
+    //    bar.show(5,120,true)
+    //    val buzz = bar.select(map_keys(col("kwexploded.metadata")))
+    //    buzz.show(5,120,true)
+
+    //    val foo = result.select($"keywords.metadata".getItem("score"))
+    //    foo.show()
 
     // combine the result and score (contained in keywords.metadata)
-    val scores = result
-      .selectExpr("explode(arrays_zip(keywords.result, keywords.metadata)) as resultTuples")
-//      .select($"resultTuples.0" as "keyword", $"resultTuples.1.score")
-
+    val scores = result.selectExpr("explode(arrays_zip(keywords.result, keywords.metadata)) as resultTuples")
+    scores.printSchema()
     scores.show(false)
 
     // Order ascending, as lower scores means higher importance
-//    scores.orderBy("score").show(5, truncate = false)
+    //    scores.orderBy("score").show(5, truncate = false)
 
+    println("Done")
   }
 
 }

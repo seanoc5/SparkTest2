@@ -1,5 +1,5 @@
 package com.oconeco.sparktest
-//code/deployment status: WORKING SparkSubmit, FAILED: local
+//code/deployment status: WORKING
 
 import scala.math.random
 
@@ -11,7 +11,8 @@ object SparkPi {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession
       .builder
-      .master("spark://dell:7077")
+      .master("local[*]")
+//      .master("spark://dell:7077")
       .appName("Spark Pi")
       .getOrCreate()
     val slices = if (args.length > 0) args(0).toInt else 2

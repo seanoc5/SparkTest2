@@ -1,4 +1,4 @@
-ThisBuild / version := "0.1.0"
+ThisBuild / version := "0.1.1"
 
 ThisBuild / scalaVersion := "2.12.10"
 
@@ -24,7 +24,7 @@ libraryDependencies ++= Seq(
 
 )
 
-assemblyJarName in assembly := "oconeco-scala-sbt-assembly-fatjar-0.1.0.jar"
+assemblyJarName in assembly := s"oconeco-scala-sbt-assembly-fatjar-${version}.jar"
 
 // META-INF discarding
 assemblyMergeStrategy in assembly := {

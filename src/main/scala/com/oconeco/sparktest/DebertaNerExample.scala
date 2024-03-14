@@ -24,17 +24,17 @@ object DebertaNerExample {
     //    val example = Seq("I really liked that movie!").toDF("text")
     val example = Seq(
       (1, "John Smith, is a fictional name and was born in Albany, New York."),
-//      (2,
-//        """Cursors are used by default to pull documents out of Solr. By default, the number of tasks allocated will be the number of shards available for the collection.
-//          |If your Spark cluster has more available executor slots than the number of shards, then you can increase parallelism when reading from Solr by splitting each shard into sub ranges using a split field. A good candidate for the split field is the version field that is attached to every document by the shard leader during indexing. See splits section to enable and configure intra shard splitting.
-//          |Cursors won’t work if the index changes during the query time. Constrain your query to a static index by using additional Solr parameters using solr.params.""".stripMargin)
+      (2,
+        """Cursors are used by default to pull documents out of Solr. By default, the number of tasks allocated will be the number of shards available for the collection.
+          |If your Spark cluster has more available executor slots than the number of shards, then you can increase parallelism when reading from Solr by splitting each shard into sub ranges using a split field. A good candidate for the split field is the version field that is attached to every document by the shard leader during indexing. See splits section to enable and configure intra shard splitting.
+          |Cursors won’t work if the index changes during the query time. Constrain your query to a static index by using additional Solr parameters using solr.params.""".stripMargin)
     ).toDF("id", "text")
 
     val result = pipeline.fit(example).transform(example)
     result.printSchema()
 
 //    result.select("sentence").show(5, false)
-    result.selectExpr("explode(sentence)").show(false)
+//    result.selectExpr("explode(sentence)").show(false)
 
 //    list(zip(light_result('token'), light_result('ner') ) )
 

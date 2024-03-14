@@ -1,14 +1,11 @@
-package com.oconeco.sparktest
+package com.oconeco.bad
+
 // code/deployment status: broken
 
-import org.apache.spark.sql.SparkSession
-import com.johnsnowlabs.nlp.DocumentAssembler
+import com.johnsnowlabs.nlp.{DocumentAssembler, SparkNLP}
 import com.johnsnowlabs.nlp.annotator._
-import com.johnsnowlabs.nlp.pretrained.PretrainedPipeline
-import org.apache.spark.sql.SparkSession
-import com.johnsnowlabs.nlp.SparkNLP
-import com.johnsnowlabs.nlp.base._
 import org.apache.spark.ml.Pipeline
+import org.apache.spark.sql.SparkSession
 
 object DebertaChatGPT4Example {
   def main(args: Array[String]): Unit = {

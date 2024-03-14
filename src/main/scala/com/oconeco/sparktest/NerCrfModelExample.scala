@@ -5,13 +5,14 @@ package com.oconeco.sparktest
 import com.johnsnowlabs.nlp.annotator.NerConverter
 import com.johnsnowlabs.nlp.base.DocumentAssembler
 import com.johnsnowlabs.nlp.annotators.Tokenizer
+import com.johnsnowlabs.nlp.annotators.keyword.yake.YakeKeywordExtraction
 import com.johnsnowlabs.nlp.annotators.sbd.pragmatic.SentenceDetector
 import com.johnsnowlabs.nlp.embeddings.WordEmbeddingsModel
 import com.johnsnowlabs.nlp.annotators.pos.perceptron.PerceptronModel
 import com.johnsnowlabs.nlp.annotators.ner.crf.NerCrfModel
 import org.apache.spark.ml.Pipeline
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.functions.explode
+import org.apache.spark.sql.functions.{concat_ws, explode, expr}
 
 object NerCrfModelExample {
   def main(args: Array[String]): Unit = {
@@ -25,6 +26,7 @@ object NerCrfModelExample {
       .getOrCreate()
 
     import spark.implicits._
+
 
     // First extract the prerequisites for the NerCrfModel
     val documentAssembler = new DocumentAssembler()
@@ -56,6 +58,13 @@ object NerCrfModelExample {
       .setInputCols("document", "token", "ner")
       .setOutputCol("ner_chunk")
 
+    val keywords = new YakeKeywordExtraction()
+      .setInputCols("token")
+      .setOutputCol("keywords")
+      .setThreshold(0.6f)
+      .setMinNGrams(1)
+      .setNKeywords(10)
+
 
     val pipeline = new Pipeline().setStages(Array(
       documentAssembler,
@@ -64,33 +73,45 @@ object NerCrfModelExample {
       embeddings,
       posTagger,
       nerTagger,
+      keywords,
       nerConverter
     ))
 
-    val data = Seq("John Smith, is a fictional name and was born in Albany, New York. Spark is a tool for big companies like Google, Amazon, and Mr. Kevin Butler does not like it.", "Sean is learning Scala."). toDF("text")
-    val result = pipeline.fit(data).transform(data)
+    val data = Seq("John Smith, is a fictional name and was born in Albany, New York. Spark is a tool for big companies like Google, Amazon, and Mr. Kevin Butler does not like it.",
+      "Sean is learning Scala."). toDF("text")
+    val resultDf = pipeline.fit(data).transform(data)
 
-    println("Result schema:")
-    result.printSchema()
+    resultDf.printSchema()
+    println(s"Number of partitions: ${resultDf.rdd.getNumPartitions}")
 
-    result.selectExpr("explode(ner_chunk)").show(40,80,true)
+//    val repartitionDf = resultDf.repartition(20)
 
-    // Replace "entities" with the actual name of your column containing the NER results
-    val explodedDF = result.withColumn("nerentity", explode($"ner"))
+//    def foo = result.selectExpr("explode(ner_chunk) as exploded")
+    val chunkiesDf = resultDf.selectExpr("explode(ner_chunk) as exploded").select("exploded.*")
+    chunkiesDf.show(10,120,true)
 
-    // Now, you can select the specific fields of interest from the "entity" column
-    val entitiesDF = explodedDF.select(
-      $"entity.result".as("entity_text"),
-      $"entity.metadata.word".as("entity_word"),
-      $"entity.metadata.sentence".as("entity_sentence"),
-      $"entity.begin".as("start_pos"),
-      $"entity.end".as("end_pos")
-    )
+    resultDf.selectExpr("explode(ner_chunk) as foo").show(40,80,true)
 
-    entitiesDF.show(80, 120)
+    // Exploding the array into separate rows (if needed for row-wise operations)
+    // val explodedDF = df.withColumn("annotation", explode($"annotations"))
+
+    // Transforming each struct in the array to concatenate 'result' and 'metadata.entity'
+//    val transformedDF = resultDf.withColumn("transformed_annotations", expr("TRANSFORM(annotations, x -> CONCAT(x.result, '-', x.metadata['entity']))"))
+
+    // To aggregate the transformed strings back into a single string per original row, if exploded
+    // Here, you might need to group by an identifier if you exploded the DataFrame, then collect_list and join
+    // val finalDF = transformedDF.groupBy("id").agg(concat_ws(" ", collect_list($"transformed_annotation")).as("concatenated_results"))
+
+    // If you did not explode the DataFrame and used TRANSFORM directly:
+//    val finalDF = transformedDF.withColumn("concatenated_results", concat_ws(" ", $"transformed_annotations"))
 
 
-//    result.select("ner.result").show(false)
+//  result.select(explode(arrays_zip('ner_chunk.result', 'ner_chunk.metadata')).alias("cols")) \
+//  .select(F.expr("cols['0']").alias("chunk"),
+//        F.expr("cols['1']['entity']").alias("ner_label")).show(truncate=False)
+
+    resultDf.select("keywords").show(40,80,true)
+
 
     println("Done??...")
   }

@@ -1,10 +1,11 @@
-package com.oconeco.sparktest
+package com.oconeco.bad
+
 // code/deployment status: broken
 //# A fatal error has been detected by the Java Runtime Environment:
 //#  SIGSEGV (0xb) at pc=0x00007f36171b19c8, pid=250691, tid=0x00007f3633dd6640
 
-import com.johnsnowlabs.nlp.base._
 import com.johnsnowlabs.nlp.annotator._
+import com.johnsnowlabs.nlp.base._
 import org.apache.spark.ml.Pipeline
 import org.apache.spark.sql.SparkSession
 
@@ -44,9 +45,9 @@ object SparkNLPPosAndNer {
           .setInputCols("document", "token")
           .setOutputCol("word_embeddings")
 
-    val posTagger = PerceptronModel.pretrained() // Pretrained POS model
-      .setInputCols("sentence", "token")
-      .setOutputCol("pos")
+//    val posTagger = PerceptronModel.pretrained() // Pretrained POS model
+//      .setInputCols("sentence", "token")
+//      .setOutputCol("pos")
 
     val nerTagger = NerDLModel.pretrained() // Pretrained NER model
 //      .setInputCols("sentence", "token", "pos")
@@ -63,20 +64,28 @@ object SparkNLPPosAndNer {
       sentenceDetector,
       tokenizer,
       wordEmbeddings,
-      posTagger,
+//      posTagger,
       nerTagger,
       converter
     ))
 
+    println("Starting fit...")
     // Fit the pipeline to the sample text
     val model = pipeline.fit(sampleText)
 
-    // Transform the sample text
+    println("Starting transform...")
+        // Transform the sample text
     val results = model.transform(sampleText)
 
+
+    println("Starting selectt...")
     // Show the results
     results.select("id", "pos.result", "ner_chunk.result").show(false)
+
+    println("Starting show...")
     results.show(false)
+
+    println("Doine")
 
     spark.stop()
   }

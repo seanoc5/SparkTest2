@@ -76,3 +76,27 @@ explodedResults.select("normalized_token").foreachPartition { partitionIterator 
 This approach leverages Spark's distributed computing capabilities, processing each partition of the DataFrame across the cluster without requiring the data to be collected to a single machine. It's a more scalable way to process the results for large datasets.
 
 Remember, when working with Spark DataFrames, you're operating in a distributed environment, so it's best to use Spark's native transformations and actions to process your data efficiently across the cluster.
+
+
+## Snippets
+
+    // Replace "entities" with the actual name of your column containing the NER results
+//    val explodedDF = result.withColumn("nerentity", explode($"ner"))
+
+    // Now, you can select the specific fields of interest from the "entity" column
+//    val entitiesDF = explodedDF.select(
+//      $"entity.result".as("entity_text"),
+//      $"entity.metadata.word".as("entity_word"),
+//      $"entity.metadata.sentence".as("entity_sentence"),
+//      $"entity.begin".as("start_pos"),
+//      $"entity.end".as("end_pos")
+//    )
+//
+//    entitiesDF.show(80, 120)
+
+//    result.select("ner.result").show(false)
+
+//  result.select(explode(arrays_zip('ner_chunk.result', 'ner_chunk.metadata')).alias("cols")) \
+//  .select(F.expr("cols['0']").alias("chunk"),
+//        F.expr("cols['1']['entity']").alias("ner_label")).show(truncate=False)
+
