@@ -5,12 +5,10 @@ ThisBuild / scalaVersion := "2.12.10"
 lazy val root = (project in file("."))
   .settings(
     name := "SparkTest2",
-//        mainClass in Compile := Some ("com.oconeco.sparktest.SparkPi"),
-//        mainClass in assembly := Some ("com.oconeco.sparktest.SparkPi"),
   )
 
-
-val sparkVersion = "3.5.0"
+val sparkVersion = "3.1.2"
+//val sparkVersion = "3.5.0"
 
 libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-core" % sparkVersion % "provided",
@@ -20,8 +18,9 @@ libraryDependencies ++= Seq(
 
   "com.johnsnowlabs.nlp" %% "spark-nlp" % "5.2.3", // Use the latest version
 
-  "org.postgresql" % "postgresql" % "42.7.1"
+  "org.postgresql" % "postgresql" % "42.7.1",
 
+  "com.lucidworks.spark" % "spark-solr" % "4.0.4"
 )
 
 assemblyJarName in assembly := s"oconeco-scala-sbt-assembly-fatjar-${version}.jar"

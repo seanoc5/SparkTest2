@@ -1,6 +1,7 @@
 package com.oconeco.sparktest
 // code/deployment status: WORKING
 //https://sparknlp.org/api/com/johnsnowlabs/nlp/annotators/ner/crf/NerCrfModel.html
+// this is more current than ContentDocumentsAnalysis
 
 import com.johnsnowlabs.nlp.annotator.NerConverter
 import com.johnsnowlabs.nlp.annotators.Tokenizer
@@ -8,28 +9,25 @@ import com.johnsnowlabs.nlp.annotators.keyword.yake.YakeKeywordExtraction
 import com.johnsnowlabs.nlp.annotators.ner.crf.NerCrfModel
 import com.johnsnowlabs.nlp.annotators.pos.perceptron.PerceptronModel
 import com.johnsnowlabs.nlp.annotators.sbd.pragmatic.SentenceDetector
-import com.johnsnowlabs.nlp.base.{DocumentAssembler, LightPipeline}
+import com.johnsnowlabs.nlp.base.DocumentAssembler
 import com.johnsnowlabs.nlp.embeddings.WordEmbeddingsModel
-import com.oconeco.sparktest.ContentDocumentsAnalysis.buildTitlePipeline
 import org.apache.spark.ml.Pipeline
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.functions.{array_join, col, collect_list, concat_ws, expr, sort_array, transform}
+import org.apache.spark.sql.{DataFrame, SparkSession, functions}
+import org.apache.spark.sql.functions._
 
-object ContentDocumentsAnalysis {
+object DocumentsAnalysis {
   def main(args: Array[String]): Unit = {
-
+    val user = "sean" // todo -- move these to params, get out of code...
+    val pass = "pass1234"
     println(s"Starting ${this.getClass.getSimpleName}...")
+
     val spark = SparkSession
       .builder
       .master("local[8]")
-      .appName("Context Docs Analysis")
+      .appName("Document Analysis")
       .getOrCreate()
 
-    val connectionProperties = new java.util.Properties()
-    connectionProperties.put("user", "corpusminder")
-    connectionProperties.put("password", "pass1234")
-
-    val batchSize = 3
+    val batchSize = 30
     val bodyMinSize = 1000
     val bodyMaxSize = 10000
 
@@ -37,75 +35,51 @@ object ContentDocumentsAnalysis {
     println(s"get DB data: ${jdbcUrl}")
     val dfContentDocs = spark.read.format("jdbc")
       .option("url", jdbcUrl)
-      .option("query", s"select * from content where structure_size > ${bodyMinSize} and structure_size < ${bodyMaxSize} limit ${batchSize}")
-//      .option("query", s"select id, title, uri, structure_text, body_text from content where structure_size > ${bodyMinSize} and structure_size < ${bodyMaxSize} limit ${batchSize}")
+      .option("user", user)
+      .option("password", pass)
+      .option("query",
+        s"""select c.*, src.label as source
+           |from content c
+           | left join source src on c.source_id = src.id
+           |where structure_size > $bodyMinSize and structure_size < $bodyMaxSize
+           |limit $batchSize""".stripMargin)
       .load()
-    //    dfContextDocs.show(10, 120, true)   // dfContextDocs.printSchema()
-
-    import spark.implicits._
+    dfContentDocs.printSchema()
+    dfContentDocs.show(2, 120, true)
 
     // ---------------------- BODY ----------------------
     println("Build body pipeline...")
     val bodyPipeline: Pipeline = buildBodyPipeline("body_text")
     val bodyModel = bodyPipeline.fit(dfContentDocs)
-    val dfBodyResult = bodyModel.transform(dfContentDocs)
-    println("show body dataframe...")
-    dfBodyResult.printSchema()
-    dfBodyResult.show(3, 120, true)
+    val dfBodyTransformed = bodyModel.transform(dfContentDocs)
 
-    val dfBody1 = dfBodyResult
+    val dfBodyResult = dfBodyTransformed
+      .withColumn("sentences", expr("transform(sentence_struct, x -> x.result)"))
       .withColumn("entities", expr("transform(ner_chunk, x -> x.result)"))
       .withColumn("keywords", expr("transform(yake_keywords, x -> x.result)"))
-    dfBody1.show(5,150,true)
+      .drop("ner_chunk", "yake_keywords", "document", "word_embeddings", "pos", "sentence_struct", "token", "ner")
+    dfBodyResult.show(5, 150, true)
 
-
-    println("get body chunks...")
-    val dfBodyExplodeNerChunks = dfBodyResult.selectExpr("id as docId", "explode(ner_chunk) as explodedChunks")
-    println("exploded body chunks show:")
-    dfBodyExplodeNerChunks.show(3,120,true)
-
-    val dfBodyChunks = dfBodyExplodeNerChunks.withColumn("entity", $"explodedChunks.result".cast("string"))
-      .withColumn("entity_type", $"explodedChunks.metadata.entity".cast("string"))
-      .withColumn("sentence_num", $"explodedChunks.metadata.sentence".cast("integer"))
-      .withColumn("start_pos", $"explodedChunks.metadata.start".cast("integer"))
-      .withColumn("id", concat_ws("-", col("docId"), $"entity_type", $"explodedChunks.begin".cast("string")))
-      .drop("explodedChunks")
-
-    println("exploded body chunks...")
-    dfBodyChunks.printSchema()
-    dfBodyChunks.show(3, 120, true)
-
-    println("pivot and rejoin main df to save to solr...")
-    val dfEntGroup = dfBodyChunks.groupBy("docId")
-      .pivot("entity_type")
-      .agg(
-        array_join(
-          sort_array(collect_list($"entity")), ", "
-        )
-      )
-
-    dfEntGroup.printSchema()
-    dfEntGroup.show(10,120,true)
-
-    // ---------------------- Write DataFrame to a new table in PostgreSQL ----------------------
-    // Define connection properties
-    println("Starting save dfBodyChunks to postgresql...")
-    dfBodyChunks.write
-      .mode("overwrite") // Specifies the behavior when data or table already exists. Options include: append, overwrite, ignore, error, errorifexists.
-      .jdbc(jdbcUrl, "document_entities", connectionProperties)
-    println("Finished saving bodyChunks")
-
-
-    // ---------------------- TITLE ----------------------
-    val titlePipeline: Pipeline = buildTitlePipeline("title")
-    val titleModel = titlePipeline.fit(dfContentDocs)
-    val titleResult = titleModel.transform(dfContentDocs)
-    val titleKeywords = titleResult.select("keywords")
-    println("Show title keywords...")
-    titleKeywords.show(5, 80, true)
+    val result = saveContentToSolr(dfBodyResult, "corpusminder", "192.168.0.17:2181")
 
     println("Done??...")
   }
+
+
+  // --------------------- FUNCTIONS ---------------------
+  def saveContentToSolr(dfWithTimestamp: DataFrame, collectionName:String, zkHost:String): Unit = {
+    val writeOptions = Map(
+      "collection" -> collectionName,
+      "zkhost" -> zkHost
+    )
+    println(s"writeOptions: ${writeOptions}")
+    val result = dfWithTimestamp.write.format("solr")
+      .options(writeOptions)
+      .mode("overwrite")
+      .save()
+    result
+  }
+
 
   private def buildBodyPipeline(sourceField: String): Pipeline = {
     // First extract the prerequisites for the NerCrfModel
@@ -115,23 +89,25 @@ object ContentDocumentsAnalysis {
 
     val sentence = new SentenceDetector()
       .setInputCols("document")
-      .setOutputCol("sentence")
+      .setOutputCol("sentence_struct")
 
     val tokenizer = new Tokenizer()
-      .setInputCols("sentence")
+      .setInputCols("document")
+//      .setInputCols("sentence_struct")
       .setOutputCol("token")
 
     val embeddings = WordEmbeddingsModel.pretrained()
-      .setInputCols("sentence", "token")
+      .setInputCols("document", "token")
       .setOutputCol("word_embeddings")
 
     val posTagger = PerceptronModel.pretrained()
-      .setInputCols("sentence", "token")
+      .setInputCols("sentence_struct", "token")
       .setOutputCol("pos")
 
     // Then NER can be extracted
     val nerTagger = NerCrfModel.pretrained()
-      .setInputCols("sentence", "token", "word_embeddings", "pos")
+//      .setInputCols("sentence_struct", "token", "word_embeddings", "pos")
+      .setInputCols("document", "token", "word_embeddings", "pos")
       .setOutputCol("ner")
 
     val nerConverter = new NerConverter()
@@ -141,7 +117,7 @@ object ContentDocumentsAnalysis {
     val keywords = new YakeKeywordExtraction()
       .setInputCols("token")
       .setOutputCol("yake_keywords")
-      .setThreshold(0.5f)
+      .setThreshold(0.6f)
       .setMinNGrams(1)
       .setNKeywords(10)
 
