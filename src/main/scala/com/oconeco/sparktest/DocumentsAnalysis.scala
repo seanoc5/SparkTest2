@@ -11,18 +11,24 @@ import com.johnsnowlabs.nlp.annotators.pos.perceptron.PerceptronModel
 import com.johnsnowlabs.nlp.annotators.sbd.pragmatic.SentenceDetector
 import com.johnsnowlabs.nlp.base.DocumentAssembler
 import com.johnsnowlabs.nlp.embeddings.WordEmbeddingsModel
+import org.apache.log4j.LogManager
 import org.apache.spark.ml.Pipeline
 import org.apache.spark.sql.{DataFrame, SparkSession, functions}
 import org.apache.spark.sql.functions._
+import org.postgresql.Driver
 
 object DocumentsAnalysis {
+  private val logger = LogManager.getLogger(getClass.getName)
   def main(args: Array[String]): Unit = {
+
     val user = "sean" // todo -- move these to params, get out of code...
     val pass = "pass1234"
-    println(s"Starting ${this.getClass.getSimpleName}...")
+    logger.info(s"Starting ${this.getClass.getSimpleName}...")
+    val driverFoo = new Driver()
 
     val spark = SparkSession
       .builder
+//      .master("spark://dell:7077")
       .master("local[8]")
       .appName("Document Analysis")
       .getOrCreate()
@@ -32,9 +38,10 @@ object DocumentsAnalysis {
     val bodyMaxSize = 10000
 
     val jdbcUrl = "jdbc:postgresql://dell/cm_dev"
-    println(s"get DB data: ${jdbcUrl}")
+    logger.info(s"get DB data: ${jdbcUrl}")
     val dfContentDocs = spark.read.format("jdbc")
       .option("url", jdbcUrl)
+      .option("driver", "org.postgresql.Driver")
       .option("user", user)
       .option("password", pass)
       .option("query",
@@ -42,13 +49,25 @@ object DocumentsAnalysis {
            |from content c
            | left join source src on c.source_id = src.id
            |where structure_size > $bodyMinSize and structure_size < $bodyMaxSize
+           |orderby last_modified desc
            |limit $batchSize""".stripMargin)
+//      .option("partitionColumn", "display_order")
+      // lowest value to pull data for with the partitionColumn
+//      .option("lowerBound", "0")
+      // max value to pull data for with the partitionColumn
+//      .option("upperBound", "20")
+      // number of partitions to distribute the data into. Do not set this very large (~hundreds)
+      .option("numPartitions", 20)
       .load()
+
+    val numParts = dfContentDocs.rdd.getNumPartitions
+    logger.error(s"Number of partions from Postgres load: ${numParts} ====================")
+
     dfContentDocs.printSchema()
     dfContentDocs.show(2, 120, true)
 
     // ---------------------- BODY ----------------------
-    println("Build body pipeline...")
+    logger.info("Build body pipeline...")
     val bodyPipeline: Pipeline = buildBodyPipeline("body_text")
     val bodyModel = bodyPipeline.fit(dfContentDocs)
     val dfBodyTransformed = bodyModel.transform(dfContentDocs)
@@ -60,9 +79,10 @@ object DocumentsAnalysis {
       .drop("ner_chunk", "yake_keywords", "document", "word_embeddings", "pos", "sentence_struct", "token", "ner")
     dfBodyResult.show(5, 150, true)
 
-    val result = saveContentToSolr(dfBodyResult, "corpusminder", "192.168.0.17:2181")
+    saveContentToSolr(dfBodyResult, "corpusminder", "192.168.0.17:2181")
 
-    println("Done??...")
+    spark.stop()
+    logger.info("Done??...")
   }
 
 
@@ -72,7 +92,7 @@ object DocumentsAnalysis {
       "collection" -> collectionName,
       "zkhost" -> zkHost
     )
-    println(s"writeOptions: ${writeOptions}")
+    logger.info(s"writeOptions: ${writeOptions}")
     val result = dfWithTimestamp.write.format("solr")
       .options(writeOptions)
       .mode("overwrite")
@@ -132,6 +152,7 @@ object DocumentsAnalysis {
       keywords,
       nerConverter
     ))
+    logger.warn(s"Pipeline: ${pipeline}")
     pipeline
   }
 
@@ -187,7 +208,7 @@ object DocumentsAnalysis {
     val start = System.nanoTime()
     val result = block
     val end = System.nanoTime()
-    println(s"Elapsed time: ${(end - start) / 1e9} seconds")
+    logger.info(s"Elapsed time: ${(end - start) / 1e9} seconds")
     result
   }
 }
