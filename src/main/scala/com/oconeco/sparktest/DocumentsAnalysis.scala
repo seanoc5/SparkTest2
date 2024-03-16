@@ -27,7 +27,7 @@ object DocumentsAnalysis {
       .appName("Document Analysis")
       .getOrCreate()
 
-    val batchSize = 30
+    val batchSize = 3
     val bodyMinSize = 1000
     val bodyMaxSize = 10000
 
