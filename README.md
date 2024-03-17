@@ -78,6 +78,29 @@ This approach leverages Spark's distributed computing capabilities, processing e
 Remember, when working with Spark DataFrames, you're operating in a distributed environment, so it's best to use Spark's native transformations and actions to process your data efficiently across the cluster.
 
 
+## timings
+### DocumentsAnalysis 
+- linyoga 
+  - (300 content docs)
+    - 10 partitions
+      - 2024-03-16: 
+        - 43 seconds - 10 partitions local[*] yoga
+        - 34 seconds - 10 partitions local[*] yoga
+        - 34 seconds - 10 partitions local[*] yoga (21:26:56)
+    - 5 partitions
+      - 2024-03-16: 
+        - 33.2 
+        - 33.350 (2024-03-16 21:34:05,003)
+        - 34.22  (2024-03-16 21:35:21)
+    - 1 partition
+      - 42.486 (2024-03-16 21:37:15)
+      - 41.05 (2024-03-16 21:39:15)
+    - 30 partitions
+      - 34.616 (2024-03-16 21:40:53)
+      - 32.86 (2024-03-16 21:41:51)
+      - 
+
+
 ## Snippets
 
     // Replace "entities" with the actual name of your column containing the NER results

@@ -11,7 +11,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.{col, map_keys}
 
 
-object YakeKeywordExtraction {
+object YakeExample {
   def main(args: Array[String]): Unit = {
     println(s"Starting ${this.getClass.getSimpleName}...")
 

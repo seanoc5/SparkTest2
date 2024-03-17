@@ -11,7 +11,10 @@ import com.johnsnowlabs.nlp.annotators.pos.perceptron.PerceptronModel
 import com.johnsnowlabs.nlp.annotators.sbd.pragmatic.SentenceDetector
 import com.johnsnowlabs.nlp.base.DocumentAssembler
 import com.johnsnowlabs.nlp.embeddings.WordEmbeddingsModel
-import org.apache.log4j.LogManager
+import org.apache.logging.log4j.LogManager
+//import org.apache.log4j.LogManager
+//import org.apache.logging.log4j.Logger
+
 import org.apache.spark.ml.Pipeline
 import org.apache.spark.sql.{DataFrame, SparkSession, functions}
 import org.apache.spark.sql.functions._
@@ -19,49 +22,60 @@ import org.postgresql.Driver
 
 object DocumentsAnalysis {
   private val logger = LogManager.getLogger(getClass.getName)
+
   def main(args: Array[String]): Unit = {
+    val start = System.nanoTime()
 
     val user = "sean" // todo -- move these to params, get out of code...
     val pass = "pass1234"
+    val targetPartions = 30
     logger.info(s"Starting ${this.getClass.getSimpleName}...")
-    val driverFoo = new Driver()
+    //    val driverFoo = new Driver()
 
     val spark = SparkSession
       .builder
-//      .master("spark://dell:7077")
+      //      .master("spark://dell:7077")
       .master("local[8]")
       .appName("Document Analysis")
       .getOrCreate()
 
-    val batchSize = 3
+    val batchSize = 30
     val bodyMinSize = 1000
     val bodyMaxSize = 10000
+    val partitions = 5
+
+    val pushdownQuery =
+      s"""select c.*, src.label as source
+         |from content c
+         | left join source src on c.source_id = src.id
+         |where structure_size > $bodyMinSize and structure_size < $bodyMaxSize
+         |order by last_updated desc
+         |limit $batchSize""".stripMargin
 
     val jdbcUrl = "jdbc:postgresql://dell/cm_dev"
     logger.info(s"get DB data: ${jdbcUrl}")
-    val dfContentDocs = spark.read.format("jdbc")
+    val dfContentDocs = spark.read.format("jdbc") // todo - need to figure out how to load with reasonable partitions (currently calling rdd.repartition()
       .option("url", jdbcUrl)
+      .option("dbtable", s"(${pushdownQuery}) as qryTable")
       .option("driver", "org.postgresql.Driver")
       .option("user", user)
       .option("password", pass)
-      .option("query",
-        s"""select c.*, src.label as source
-           |from content c
-           | left join source src on c.source_id = src.id
-           |where structure_size > $bodyMinSize and structure_size < $bodyMaxSize
-           |orderby last_modified desc
-           |limit $batchSize""".stripMargin)
-//      .option("partitionColumn", "display_order")
+      //      .option("query", pushdownQuery)
+      .option("partitionColumn", "display_order")
       // lowest value to pull data for with the partitionColumn
-//      .option("lowerBound", "0")
+      .option("lowerBound", "0")
       // max value to pull data for with the partitionColumn
-//      .option("upperBound", "20")
+      .option("upperBound", "20")
       // number of partitions to distribute the data into. Do not set this very large (~hundreds)
-      .option("numPartitions", 20)
+      .option("numPartitions", targetPartions)
       .load()
 
-    val numParts = dfContentDocs.rdd.getNumPartitions
-    logger.error(s"Number of partions from Postgres load: ${numParts} ====================")
+//    val bigPartitions = dfBig.rdd.getNumPartitions
+//    logger.info(s"BIG Number of partions from Postgres load: ${bigPartitions} ====================")
+
+//    val dfContentDocs = dfBig.repartition(targetPartions)
+    val repartCount = dfContentDocs.rdd.getNumPartitions
+    logger.info(s"Number of partions from Postgres load: ${repartCount} ====================")
 
     dfContentDocs.printSchema()
     dfContentDocs.show(2, 120, true)
@@ -81,13 +95,16 @@ object DocumentsAnalysis {
 
     saveContentToSolr(dfBodyResult, "corpusminder", "192.168.0.17:2181")
 
+    val end = System.nanoTime()
+    logger.info(s"Elapsed time: ${(end - start) / 1e9} seconds")
+
     spark.stop()
     logger.info("Done??...")
   }
 
 
   // --------------------- FUNCTIONS ---------------------
-  def saveContentToSolr(dfWithTimestamp: DataFrame, collectionName:String, zkHost:String): Unit = {
+  def saveContentToSolr(dfWithTimestamp: DataFrame, collectionName: String, zkHost: String): Unit = {
     val writeOptions = Map(
       "collection" -> collectionName,
       "zkhost" -> zkHost
@@ -113,7 +130,7 @@ object DocumentsAnalysis {
 
     val tokenizer = new Tokenizer()
       .setInputCols("document")
-//      .setInputCols("sentence_struct")
+      //      .setInputCols("sentence_struct")
       .setOutputCol("token")
 
     val embeddings = WordEmbeddingsModel.pretrained()
@@ -126,7 +143,7 @@ object DocumentsAnalysis {
 
     // Then NER can be extracted
     val nerTagger = NerCrfModel.pretrained()
-//      .setInputCols("sentence_struct", "token", "word_embeddings", "pos")
+      //      .setInputCols("sentence_struct", "token", "word_embeddings", "pos")
       .setInputCols("document", "token", "word_embeddings", "pos")
       .setOutputCol("ner")
 
