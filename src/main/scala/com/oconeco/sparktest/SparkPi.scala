@@ -2,12 +2,15 @@ package com.oconeco.sparktest
 //code/deployment status: WORKING
 
 import scala.math.random
-
 import org.apache.spark.sql.SparkSession
+import org.slf4j.LoggerFactory
 
 
 /** Computes an approximation to pi */
 object SparkPi {
+
+  val logger = LoggerFactory.getLogger(this.getClass.getName)
+
   def main(args: Array[String]): Unit = {
     val spark = SparkSession
       .builder
@@ -22,7 +25,9 @@ object SparkPi {
       val y = random * 2 - 1
       if (x*x + y*y <= 1) 1 else 0
     }.reduce(_ + _)
-    println(s"Pi is roughly ${4.0 * count / (n - 1)}")
+
+    logger.info(s"Pi is roughly ${4.0 * count / (n - 1)}")
+
     spark.stop()
   }
 }

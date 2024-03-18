@@ -34,6 +34,11 @@ libraryDependencies ++= Seq(
 )
 //libraryDependencies += "org.rogach" %% "scallop" % ""
 
+excludeDependencies ++= Seq(
+  "org.slf4j" % "slf4j-log4j12",
+  "org.slf4j" % "slf4j-reload4j",
+)
+
 assemblyJarName in assembly := s"oconeco-scala-sbt-assembly-fatjar-${version.value}.jar"
 
 // META-INF discarding
