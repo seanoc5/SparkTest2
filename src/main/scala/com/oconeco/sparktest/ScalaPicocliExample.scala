@@ -17,6 +17,12 @@ class SimpleApp extends Runnable {
   @Option(names = Array("-x", "--maxSize"), description = Array("Maximum content size."))
   private var maxSize: Integer = _
 
+  @Option(names = Array("-b", "--batchSize"), description = Array("Batch size for reading source db records size."))
+  private var batchSize: Integer = _
+
+  @Option(names = Array("-t", "--targetPartitions"), description = Array("Target count of partitions for analysis and save to solr"))
+  private var tartgetPartitions: Integer = _
+
   override def run(): Unit = {
     println(s"Welcome, $username! Your password is $password")
   }

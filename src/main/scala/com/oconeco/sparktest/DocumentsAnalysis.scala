@@ -4,7 +4,6 @@ package com.oconeco.sparktest
 // this is more current than ContentDocumentsAnalysis
 import picocli.CommandLine
 import picocli.CommandLine.{Command, Option}
-
 import com.johnsnowlabs.nlp.annotator.NerConverter
 import com.johnsnowlabs.nlp.annotators.Tokenizer
 import com.johnsnowlabs.nlp.annotators.keyword.yake.YakeKeywordExtraction
@@ -14,14 +13,12 @@ import com.johnsnowlabs.nlp.annotators.sbd.pragmatic.SentenceDetector
 import com.johnsnowlabs.nlp.base.DocumentAssembler
 import com.johnsnowlabs.nlp.embeddings.WordEmbeddingsModel
 import org.apache.logging.log4j.LogManager
-//import picocli.CommandLine.Command
-//import org.apache.log4j.LogManager
-//import org.apache.logging.log4j.Logger
 
+import picocli.CommandLine
+import picocli.CommandLine.{Command, Option}
 import org.apache.spark.ml.Pipeline
 import org.apache.spark.sql.{DataFrame, SparkSession, functions}
 import org.apache.spark.sql.functions._
-import org.postgresql.Driver
 
 
 object DocumentsAnalysis {
@@ -29,21 +26,19 @@ object DocumentsAnalysis {
 
   def main(args: Array[String]): Unit = {
     val start = System.nanoTime()
+    logger.info(s"Starting ${this.getClass.getSimpleName}...")
 
     val user = "sean"                     // todo -- move these to params, get out of code...
     val pass = "pass1234"
-    val targetPartions = 20
-    val batchSize = 3000
+    val targetPartions = 5
+    val batchSize = 30
     val bodyMinSize = 1000
     val bodyMaxSize = 100000
 
-    logger.info(s"Starting ${this.getClass.getSimpleName}...")
-    //    val driverFoo = new Driver()
 
     val spark = SparkSession
       .builder
-      //      .master("spark://dell:7077")
-//      .master("local[8]")
+      .master("local[8]")
       .appName("Document Analysis")
       .getOrCreate()
 
@@ -74,15 +69,9 @@ object DocumentsAnalysis {
       .option("numPartitions", targetPartions)
       .load()
 
-//    val bigPartitions = dfBig.rdd.getNumPartitions
-//    logger.info(s"BIG Number of partions from Postgres load: ${bigPartitions} ====================")
+    val partionCount = dfContentDocs.rdd.getNumPartitions
+    logger.info(s"Number of partions from Postgres load: ${partionCount} ====================")
 
-//    val dfContentDocs = dfBig.repartition(targetPartions)
-    val repartCount = dfContentDocs.rdd.getNumPartitions
-    logger.info(s"Number of partions from Postgres load: ${repartCount} ====================")
-
-    dfContentDocs.printSchema()
-    dfContentDocs.show(2, 120, true)
 
     // ---------------------- BODY ----------------------
     logger.info("Build body pipeline...")
@@ -95,7 +84,7 @@ object DocumentsAnalysis {
       .withColumn("entities", expr("transform(ner_chunk, x -> x.result)"))
       .withColumn("keywords", expr("transform(yake_keywords, x -> x.result)"))
       .drop("ner_chunk", "yake_keywords", "document", "word_embeddings", "pos", "sentence_struct", "token", "ner")
-    dfBodyResult.show(5, 150, true)
+//    dfBodyResult.show(5, 150, true)
 
     saveContentToSolr(dfBodyResult, "corpusminder", "192.168.0.17:2181")
 
@@ -108,7 +97,10 @@ object DocumentsAnalysis {
 
 
   // --------------------- FUNCTIONS ---------------------
-  def saveContentToSolr(dfWithTimestamp: DataFrame, collectionName: String, zkHost: String): Unit = {
+  def saveContentToSolr(df: DataFrame, collectionName: String, zkHost: String): Unit = {
+//    val myTimestamp = new java.sql.Timestamp(new Date().getTime)
+
+    val dfWithTimestamp = df    //.withColumn("timestamp", lit(myTimestamp))
     val writeOptions = Map(
       "collection" -> collectionName,
       "zkhost" -> zkHost
@@ -118,7 +110,6 @@ object DocumentsAnalysis {
       .options(writeOptions)
       .mode("overwrite")
       .save()
-    result
   }
 
 
