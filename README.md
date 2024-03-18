@@ -98,7 +98,10 @@ Remember, when working with Spark DataFrames, you're operating in a distributed 
     - 30 partitions
       - 34.616 (2024-03-16 21:40:53)
       - 32.86 (2024-03-16 21:41:51)
-      - 
+  - 3000 docs
+    - 5 partitions
+      - 330.33 (2024-03-16 23:33:)
+      - 299.11 (2024-03-16 23:40:29
 
 
 ## Snippets

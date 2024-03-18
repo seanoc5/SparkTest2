@@ -1,4 +1,4 @@
-ThisBuild / version := "0.1.5"
+ThisBuild / version := "0.1.6"
 
 ThisBuild / scalaVersion := "2.12.10"
 
@@ -14,7 +14,7 @@ libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-core" % sparkVersion % "provided",
   "org.apache.spark" %% "spark-sql" % sparkVersion,
   "org.apache.spark" %% "spark-mllib" % sparkVersion,
-//  "org.apache.spark" %% "spark-streaming" % sparkVersion,
+  //  "org.apache.spark" %% "spark-streaming" % sparkVersion,
 
   "com.johnsnowlabs.nlp" %% "spark-nlp" % "5.2.3", // Use the latest version
 
@@ -24,8 +24,15 @@ libraryDependencies ++= Seq(
 
   "org.postgresql" % "postgresql" % "42.7.2" % "compile",
 
-  "com.lucidworks.spark" % "spark-solr" % "4.0.4"
+  "com.lucidworks.spark" % "spark-solr" % "4.0.4",
+
+  "info.picocli" % "picocli" % "4.7.5"
+
+//    "com.monovore" %% "decline" % "2.2.0",
+//    "com.monovore" %% "decline-effect" % "2.2.0" // For integration with Cats Effect
+
 )
+//libraryDependencies += "org.rogach" %% "scallop" % ""
 
 assemblyJarName in assembly := s"oconeco-scala-sbt-assembly-fatjar-${version.value}.jar"
 

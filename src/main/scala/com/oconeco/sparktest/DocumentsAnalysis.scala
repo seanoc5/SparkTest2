@@ -2,6 +2,8 @@ package com.oconeco.sparktest
 // code/deployment status: WORKING
 //https://sparknlp.org/api/com/johnsnowlabs/nlp/annotators/ner/crf/NerCrfModel.html
 // this is more current than ContentDocumentsAnalysis
+import picocli.CommandLine
+import picocli.CommandLine.{Command, Option}
 
 import com.johnsnowlabs.nlp.annotator.NerConverter
 import com.johnsnowlabs.nlp.annotators.Tokenizer
@@ -12,6 +14,7 @@ import com.johnsnowlabs.nlp.annotators.sbd.pragmatic.SentenceDetector
 import com.johnsnowlabs.nlp.base.DocumentAssembler
 import com.johnsnowlabs.nlp.embeddings.WordEmbeddingsModel
 import org.apache.logging.log4j.LogManager
+//import picocli.CommandLine.Command
 //import org.apache.log4j.LogManager
 //import org.apache.logging.log4j.Logger
 
@@ -20,29 +23,30 @@ import org.apache.spark.sql.{DataFrame, SparkSession, functions}
 import org.apache.spark.sql.functions._
 import org.postgresql.Driver
 
+
 object DocumentsAnalysis {
   private val logger = LogManager.getLogger(getClass.getName)
 
   def main(args: Array[String]): Unit = {
     val start = System.nanoTime()
 
-    val user = "sean" // todo -- move these to params, get out of code...
+    val user = "sean"                     // todo -- move these to params, get out of code...
     val pass = "pass1234"
-    val targetPartions = 30
+    val targetPartions = 20
+    val batchSize = 3000
+    val bodyMinSize = 1000
+    val bodyMaxSize = 100000
+
     logger.info(s"Starting ${this.getClass.getSimpleName}...")
     //    val driverFoo = new Driver()
 
     val spark = SparkSession
       .builder
       //      .master("spark://dell:7077")
-      .master("local[8]")
+//      .master("local[8]")
       .appName("Document Analysis")
       .getOrCreate()
 
-    val batchSize = 30
-    val bodyMinSize = 1000
-    val bodyMaxSize = 10000
-    val partitions = 5
 
     val pushdownQuery =
       s"""select c.*, src.label as source
@@ -61,11 +65,11 @@ object DocumentsAnalysis {
       .option("user", user)
       .option("password", pass)
       //      .option("query", pushdownQuery)
-      .option("partitionColumn", "display_order")
+      .option("partitionColumn", "id")
       // lowest value to pull data for with the partitionColumn
       .option("lowerBound", "0")
       // max value to pull data for with the partitionColumn
-      .option("upperBound", "20")
+      .option("upperBound", "37000")      //36141
       // number of partitions to distribute the data into. Do not set this very large (~hundreds)
       .option("numPartitions", targetPartions)
       .load()
