@@ -31,7 +31,7 @@ class SimpleApp extends Runnable {
 object ScalaPicocliExample {
   def main(args: Array[String]): Unit = {
     val exitCode = new CommandLine(new SimpleApp()).execute(args: _*)
-    System.exit(exitCode)
     println("Done")
+    System.exit(exitCode)
   }
 }
