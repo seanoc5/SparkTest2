@@ -76,7 +76,7 @@ class SimpleApp extends Runnable {
     }
 */
 
-    saveContentToSolr(dfContentDocs, "corpusminder", "192.168.0.17:2181")
+    saveContentToSolr(dfContentDocs, "corpusminder", "192.168.0.17:2181/solr")
 
     spark.stop()
 
